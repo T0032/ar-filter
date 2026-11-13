@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ฟิลเตอร์หน้าของฉัน · 0214381 Lab 3</title>
+  <!-- ห้ามแก้ 2 บรรทัดนี้: A-Frame 1.5.0 และ MindAR 1.2.5 (Face Tracking) -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; }
+    /* ใส่พื้นดำที่ html อย่างเดียว ถ้าใส่ที่ body ด้วย พื้นดำของ body จะบังภาพกล้อง (MindAR วาง video ไว้ z-index -2) */
+    html { background: #000; }
+    a-scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* ⑤ ฟิลเตอร์สี (Color filter) ทำงานกับ "ภาพจากกล้อง" เท่านั้น ไม่กระทบสติกเกอร์ 3D */
+    video { filter: var(--color-filter, none); }
+
+    .bar { position: fixed; left: 0; right: 0; bottom: 16px; z-index: 10;
+           display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 0 8px; }
+    .bar button { border: 0; border-radius: 999px; padding: 10px 14px; font-size: 15px;
+                  background: rgba(255,255,255,.88); color: #2A1B5C; }
+    .bar button.on { background: #5A3EBD; color: #fff; }
+  </style>
+</head>
+<body>
+  <a-scene mindar-face embedded color-space="sRGB"
+           renderer="colorManagement: true, physicallyCorrectLights"
+           vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+
+    <!-- รูปสติกเกอร์อยู่ในโฟลเดอร์ assets · เปลี่ยนเป็นรูปของตัวเองได้ (PNG พื้นหลังโปร่งใส) -->
+    <a-assets>
+      <img id="glasses"  src="assets/glasses.png">
+      <img id="hat"      src="assets/hat.png">
+      <img id="mustache" src="assets/mustache.png">
+      <img id="blush"    src="assets/blush.png">
+      <!-- ชุดสุภาพบุรุษ (วาดเอง) -->
+      <img id="tophat"   src="assets/tophat.png">
+      <img id="monocle"  src="assets/monocle.png">
+      <img id="pipe"     src="assets/pipe.png">
+    </a-assets>
+
+    <a-camera active="false" position="0 0 0"></a-camera>
+
+    <!-- anchorIndex = จุดบนใบหน้าที่ระบบติดตาม (มีทั้งหมด 468 จุด)
+         168 = ระหว่างคิ้ว/สันจมูก · 10 = กลางหน้าผาก · 164 = เหนือริมฝีปากบน · 50 = แก้มซ้าย · 280 = แก้มขวา
+         หน่วยของ position/width ประมาณ "ความกว้างใบหน้า = 1" -->
+
+    <!-- ① แก้ได้: แว่นตา ลองปรับ width และ position ให้พอดีกับตา (y บวก = ขึ้น, z บวก = ยื่นออกจากหน้า) -->
+    <!-- เปลี่ยนเป็นแว่นตาข้างเดียว (monocle) ครอบตาข้างหนึ่ง · ถ้าอยากย้ายไปอีกตา เปลี่ยน x เป็นค่าลบ -->
+    <a-entity mindar-face-target="anchorIndex: 168">
+      <a-image src="#monocle" width="0.36" height="0.504" position="0.18 -0.09 0.06"
+               transparent="true"></a-image>
+    </a-entity>
+
+    <!-- ② แก้ได้: หมวก ลองย้ายขึ้นลงด้วยค่า y หรือเปลี่ยน src เป็น #mustache ดูว่าเกิดอะไร -->
+    <a-entity mindar-face-target="anchorIndex: 10">
+      <a-image src="#tophat" width="0.9" height="0.9" position="0 0.36 0"
+               transparent="true"></a-image>
+    </a-entity>
+
+    <!-- ③ เพิ่มหนวด: ลบบรรทัด "เปิดคอมเมนต์" และ "ปิดคอมเมนต์" ที่ครอบบล็อกข้างล่างออก 2 บรรทัด -->
+    <a-entity mindar-face-target="anchorIndex: 164">
+      <a-image src="#mustache" width="0.5" height="0.18" position="0 0 0.05"
+               transparent="true"></a-image>
+    </a-entity>
+
+    <!-- ④ ท้าทาย: เพิ่มแก้มแดงทั้งสองข้าง ใช้ anchorIndex 50 และ 280 กับรูป #blush (width ประมาณ 0.25) -->
+    <!-- ไปป์ที่มุมปาก (anchorIndex 14 = กลางริมฝีปากล่าง) ปากไปป์อยู่ขอบซ้ายของรูป -->
+    <a-entity mindar-face-target="anchorIndex: 14">
+      <a-image src="#pipe" width="0.6" height="0.3" position="0.38 -0.01 0.05"
+               transparent="true"></a-image>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- ⑤ แถบปุ่มฟิลเตอร์สี แก้หรือเพิ่มปุ่มได้ (ค่าใน data-f คือ CSS filter) -->
+  <div class="bar" id="bar">
+    <button data-f="none" class="on">ปกติ</button>
+    <button data-f="sepia(.35) saturate(1.4) brightness(1.05)">อบอุ่น</button>
+    <button data-f="saturate(.6) hue-rotate(190deg) brightness(1.05)">เย็น</button>
+    <button data-f="grayscale(1) contrast(1.2)">ขาวดำ</button>
+    <button data-f="sepia(.8) contrast(1.1) brightness(.95)">สุภาพบุรุษ</button>
+    <button data-f="saturate(1.6) contrast(1.1) hue-rotate(-10deg)">สดใส</button>
+    <button id="toggle">ซ่อนสติกเกอร์</button>
+  </div>
+
+  <script>
+    // เปลี่ยนฟิลเตอร์สีของภาพกล้องตามปุ่มที่กด
+    const bar = document.getElementById('bar');
+    bar.querySelectorAll('button[data-f]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.documentElement.style.setProperty('--color-filter', btn.dataset.f);
+        bar.querySelectorAll('button[data-f]').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+      });
+    });
+    // ซ่อน/แสดงสติกเกอร์ทั้งหมด เพื่อเทียบ "Color filter" กับ "AR face filter"
+    let shown = true;
+    document.getElementById('toggle').addEventListener('click', e => {
+      shown = !shown;
+      document.querySelectorAll('[mindar-face-target]').forEach(el => el.setAttribute('visible', shown));
+      e.target.textContent = shown ? 'ซ่อนสติกเกอร์' : 'แสดงสติกเกอร์';
+    });
+  </script>
+</body>
+</html>
